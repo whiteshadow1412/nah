@@ -1,0 +1,250 @@
+<!-- <!DOCTYPE html> -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-store">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Expires" content="0">
+<link rel="stylesheet" href="/eccm/style/foundation.min.css">
+<link rel="stylesheet" href="/eccm/style/element.css">
+<link rel="stylesheet" href="/eccm/style/common.css">
+<script src="/eccm/script/vue.js"></script>
+<script src="/eccm/script/axios.min.js"></script>
+<script src="/eccm/script/element.js"></script>
+<script src="/eccm/script/element-ja.js"></script>
+<script src="/eccm/script/keyctrl.js"></script>
+<style>
+.left-menu-area {
+	border-style: solid;
+	border-width: 3px;
+	border-radius: 8px;
+	border-color: #CCC;
+	background: #FFF;
+	margin: 50px 0px 0px 75px;
+	padding-bottom: 30px;
+	width: 540px;
+	/* height: 380px; */
+	float: left;
+}
+
+.title_align_center {
+	text-align: center;
+}
+
+.disp-info {
+	background: #8EE68E;
+}
+
+.top-menu-title {
+	padding: 0px 10px;
+	width: 260px;
+	font-size: 20px;
+	height: 15px;
+	background: #FEFEFE;
+	display: block;
+	transform: translateY(-100%) translateX(1em);
+}
+
+.top-menu-button {
+	width: 350px;
+	height: 50px;
+	line-height: 0.4;
+	text-align: left;
+	color: #0A0A0A;
+	border-color: #41719C;
+	border-width: 2;
+	margin-top: 20px;
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+}
+
+.disp-info {
+	background: #8EE68E;
+}
+
+.disp-info-2 {
+	background: #8EE68E;
+	height: 90px;
+	line-height: 1.4;
+}
+
+.disp-info-3 {
+	background: #8EE68E;
+	margin-left: 30px;
+	margin-top: 10px;
+	float: left;
+}
+
+.disp-info-4 {
+	width: 100px;
+	display: inline;
+	margin-left: 20px;
+	margin-top: 10px;
+	background: #078007 ;
+	color: #FFF;
+}
+
+.margin-left-none {
+	margin-left: 30px;
+}
+
+.layout-manage {
+	background: #ABCDFF;
+}
+
+.data-maint {
+	background: #FFFFC5;
+}
+
+.disp-layout {
+	background: #CCFFFF;
+	text-align: center;
+}
+
+.el-radio__label {
+	display: none;
+}
+
+.disabled {
+	border: 1px solid #999999;
+	background-color: #cccccc;
+	color: #666666;
+}
+
+.is-checked {
+	content: "";
+}
+
+.button-layout-active {
+	background-color: #9F3;
+}
+
+.is-hidden {
+	display: table-cell !important;
+}
+
+.el-table__fixed-header-wrapper, .el-table__fixed-body-wrapper {
+	z-index: 1 !important;
+}
+
+.el-table__body-wrapper {
+	z-index: 1;
+}
+
+.arrow-icon {
+	margin-left: 175px;
+	margin-right: auto;
+	margin-top:10px;
+	margin-bottom:10px;
+	display: block;
+}
+.warning-icon {
+	margin-left: 10px;
+	margin-right: auto;
+	margin-top:20px;
+	margin-bottom:10px;
+	width:30px;
+	height:30px;
+	display: inline-block;
+}
+.warning-title {
+	display: inline-block;
+	height: 30px;
+}
+.top-menu-button {
+	text-align: center;
+}
+.el-table .warning-row {
+	background-color: #D9D9D9 !important;
+}
+.el-table td, .el-table th {
+padding: 5px 0}
+.icon-plus{
+	width:20px;
+	height: 20px;
+}
+.icon-corner{
+	height: 15px;
+    float: right;
+    margin-right: 5px;
+}
+</style>
+</head>
+<body>
+	<div id="my-root">
+		<my-title-bar title="試験計画書管理メニュー" backurl="show"></my-title-bar>
+		<div style="margin-top: 10px; margin-left: 30px;">
+			<label style="font-size: 14px;"> <span style="font-size: 14pt;">{{ ssName }}</span>
+			</label>
+		</div>
+
+		<el-container width="100%" style="padding-top: 10px; padding-left: 75px; padding-right:75px; height: 420px;"> 
+			<el-aside width="100%"> 
+				<el-table v-if="isLoaded" :data="filteredList" height="400px" :cell-class-name="rowClassName" border> 
+					<!-- Select column -->
+					<el-table-column width="75" align="center" label="件名
+選択">
+						<template scope="scope">
+							<el-radio-group v-model="selectedJobId" style="display: block;">
+								<el-radio class="radio" size="small" :label="scope.row.id" ></el-radio>
+							</el-radio-group>
+						</template> 
+					</el-table-column>
+
+					<el-table-column label="統合" width="45" align="center">
+						<template slot-scope="scope">
+							<img v-if="scope.row.opened == false && scope.row.jobType == 1" @click="onExploreItem(scope.$index,scope.row)" class="icon-plus" alt="plus icon" src="\eccm\images\icon\plus.png">
+							<img v-else-if="scope.row.opened == true && scope.row.jobType == 1" @click="onCloseItem(scope.$index,scope.row)" class="icon-plus" alt="plus icon" src="\eccm\images\icon\minus.png">
+							<img v-else-if="scope.row.jobType == 2" class="icon-corner" alt="corner icon" src="\eccm\images\icon\corner.png">
+						</template>
+					</el-table-column>
+
+					<template v-for="item in viewColMasts">
+						<el-table-column v-if="item.col.keyNo != colKeyNo.PLAN_START_DATE && item.col.keyNo != colKeyNo.PLAN_END_DATE && item.col.keyNo != colKeyNo.ACTUAL_START_DATE && item.col.keyNo != colKeyNo.ACTUAL_END_DATE"  
+							:align="item.col.keyNo == colKeyNo.STATION_MASTER || item.col.keyNo == colKeyNo.CONST_NAME || item.col.keyNo == colKeyNo.JOB_NAME ? '' : 'center'" 
+							:width="item.col.width" :prop="'names[' + item.col.keyNo + ']'" :label="item.col.colName"> 
+							<template slot-scope="scope" width="150" fixed>
+								<a v-if="item.col.keyNo == colKeyNo.JOB_NO || item.col.keyNo == colKeyNo.POWER_OUT_FLAG || item.col.keyNo == colKeyNo.OPERATION_FLAG" href="#">{{ scope.row.names[item.col.keyNo] }}</a>
+								<span v-else>{{ scope.row.names[item.col.keyNo] }}</span>
+							</template>
+						</el-table-column>
+						<template v-else-if="item.col.keyNo == colKeyNo.PLAN_START_DATE">
+							<el-table-column label="作業計画" :width="viewColMasts[viewColIndexs.PLAN_START_DATE].col.width + viewColMasts[viewColIndexs.PLAN_END_DATE].col.width"> 
+								<el-table-column align="center" :label="viewColMasts[viewColIndexs.PLAN_START_DATE].col.colName" 
+									:width="viewColMasts[viewColIndexs.PLAN_START_DATE].col.width" :prop="'names[' + colKeyNo.PLAN_START_DATE + ']'">
+								</el-table-column>
+								<el-table-column align="center" :label="viewColMasts[viewColIndexs.PLAN_END_DATE].col.colName" 
+									:width="viewColMasts[viewColIndexs.PLAN_END_DATE].col.width" :prop="'names[' + colKeyNo.PLAN_END_DATE + ']'">
+								</el-table-column>
+							</el-table-column>
+							<el-table-column label="作業実績" :width="viewColMasts[viewColIndexs.ACTUAL_START_DATE].col.width + viewColMasts[viewColIndexs.ACTUAL_END_DATE].col.width"> 
+								<el-table-column align="center" :label="viewColMasts[viewColIndexs.ACTUAL_START_DATE].col.colName" 
+									:width="viewColMasts[viewColIndexs.ACTUAL_START_DATE].col.width" :prop="'names[' + colKeyNo.ACTUAL_START_DATE + ']'"> 
+								</el-table-column>
+								<el-table-column align="center" :label="viewColMasts[viewColIndexs.ACTUAL_END_DATE].col.colName"
+									:width="viewColMasts[viewColIndexs.ACTUAL_END_DATE].col.width" :prop="'names[' + colKeyNo.ACTUAL_END_DATE + ']'"> 
+								</el-table-column>
+							</el-table-column>
+						</template>
+					</template>
+				</el-table> 
+			</el-aside>
+		</el-container>
+
+		<el-aside width="100%" style="padding: 0px 40px;">
+			<div class="button-menu-area">
+				<top-menu-button class="disp-info margin-left-none" action="undefined" title="試験計画書作成" v-on:menu-action="menuAction($event)"></top-menu-button>
+				<top-menu-button class="disp-info-3 disp-info" action="undefined" title="試験結果記入"  v-on:menu-action="menuAction($event)"></top-menu-button>
+			</div>
+		</el-aside> </el-container>
+
+		<div class="modal" v-show="isLoading" style="z-index: 9999 !important;">
+			<div class="loader"></div>
+		</div>
+	</div>
+	
+	<script src="/eccm/script/components.js"></script>
+	<script src="/eccm/script/jobPlan.js"></script>
+</body>
+</html>

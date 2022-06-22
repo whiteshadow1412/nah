@@ -1,0 +1,280 @@
+<!-- <!DOCTYPE html> -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-store">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Expires" content="0">
+<link rel="stylesheet" href="/eccm/style/foundation.min.css">
+<link rel="stylesheet" href="/eccm/style/element.css">
+<link rel="stylesheet" href="/eccm/style/common.css">
+<script src="/eccm/script/vue.js"></script>
+<script src="/eccm/script/axios.min.js"></script>
+<script src="/eccm/script/element.js"></script>
+<script src="/eccm/script/element-ja.js"></script>
+<script src="/eccm/script/keyctrl.js"></script>
+<script src="/eccm/script/d3.min.js"></script>
+
+<style>
+select{padding:5px 24px 5px 5px}
+.el-table .warning-row {
+	background-color: #D9D9D9 !important;
+}
+
+.el-input {
+	width: 400px;
+}
+
+.el-input-required textarea, .el-input-required input,
+	.el-input-required {
+	width: 400px;
+	background-color: #efef3636;
+}
+
+select:disabled, .el-input.is-disabled .el-input__inner, .el-textarea.is-disabled .el-textarea__inner
+	{
+	background-color: #f5f7fa;
+	border-color: #b5b5b5;
+	color: #0a0a0a;
+}
+
+.ccms-customize-dialog span.el-radio__label {
+	display: none;
+}
+
+.ccms-customize-dialog .el-dialog__header {
+	background: #FFCCFF;
+	text-align: center;
+}
+
+.ccms-customize-dialog .el-dialog__title {
+	line-height: 15px;
+	font-size: 18px;
+	color: #0A0A0A !important;
+}
+
+.ccms-customize-dialog .el-dialog__body {
+	padding-bottom: 10px;
+}
+
+.el-input__icon {
+	height: 40px;
+}
+
+.el-date-editor.el-input, .el-date-editor.el-input__inner {
+	width: 400px;
+}
+
+.dialogCreate .el-dialog__body {
+	overflow-y: scroll;
+	height: 700px;
+}
+
+.dialog-button, .dialog-button:hover {
+	border-color: #1184bb
+}
+
+.dialog-button:disabled, .dialog-button:disabled:hover {
+	border-color: #1184bbad
+}
+
+.dialogCreate .el-dialog__header {
+	text-align: center;
+	background: #DDEBF7;
+}
+
+.dialog-body-footer {
+	text-align: center;
+	margin: 0
+}
+
+.el-dialog__wrapper {
+	overflow: unset
+}
+.el-table td, .el-table th{
+padding: 5px 0}
+
+.icon-plus{
+	width:20px;
+	height: 20px;
+}
+.icon-corner{
+	height: 15px;
+    float: right;
+    margin-right: 5px;
+}
+.el-form-item {
+    margin-bottom: 5px;
+}
+.el-radio__input.is-disabled+span.el-radio__label{
+color: #0a0a0a;
+}
+
+span.like-link {
+	text-decoration: underline;
+	color: #1468a0;
+}
+
+span.like-link:hover {
+	cursor: pointer;
+}
+
+</style>
+</head>
+<body>
+	<div id="my-root">
+		<my-title-bar title="工事件名一覧" backurl="show" lefttext="工事作業資料管理システム"></my-title-bar>
+	
+		<el-container height="100%" width="100%" style=" padding-left: 30px; padding-right:30px"> 
+			<el-main width="1470px"> 
+
+				<label style="font-size:20px; display: block; margin-right: 40px;margin-left: -20px;">検索条件</label>
+
+				<!-- Search area -->
+				<span >工事年月：</span>
+				<el-input v-model="constructionYear" style="width: 70px" ></el-input>	
+				<span style="display: inline-block;">年度</span>
+				<el-input v-model="constructionMonth" style="width: 60px" ></el-input>
+				<span style="width: 20px; display: inline-block;">月</span>
+				
+				<span style="margin-left:30px;">電気所名称：</span>
+				<select style=" width: 190px;" v-model="selectedSsId" id="substation" >
+					<option value=""></option>
+					<option v-for="option in ssList" :value="option.key">
+						{{ option.value }}
+					</option>
+				</select>
+				
+				<span style="margin-left:30px;">工事種別：</span>
+				<select style=" width: 195px;"  v-model="constructionType">
+						<option value=""></opiton>
+						<option v-for="option in lstIndex1" :value="option.key">
+							{{ option.value }}
+						</option>
+				</select> 
+				
+				<span style="margin-left:30px;">工事担当箇所：</span>
+				<select style=" width: 195px;"  v-model="group">
+						<option value=""></opiton>
+						<option v-for="option in lstDepartment" :value="option.key">
+							{{ option.value }}
+						</option>
+				</select>
+				
+				<span style="margin-left:30px;">工事担当者：</span>
+				<el-input v-model="constructionStaff" style="width: 240px" ></el-input>
+				
+				<el-button style=" margin-right:0px;margin-left: 30px;" type="success" @click="searchJob">工事件名検索</el-button>
+				
+				<!-- Job table -->
+				<div style="height: 740px;">
+					<el-table v-if="!isLoading" :data="filteredList" height="725px" border :cell-class-name="rowClassName" > 
+						<!-- First column -->
+						<el-table-column label="統合" width="45" align="center">
+							<template slot-scope="scope">
+								<img v-if="scope.row.opened == false && scope.row.data.jobType == 1" @click="onExploreItem(scope.$index, scope.row)" class="icon-plus" alt="plus icon" src="\eccm\images\icon\plus.png">
+								<img v-else-if="scope.row.opened == true && scope.row.data.jobType == 1" @click="onCloseItem(scope.$index, scope.row)" class="icon-plus" alt="plus icon" src="\eccm\images\icon\minus.png">
+								<img v-else-if="scope.row.data.jobType == 2" class="icon-corner" alt="corner icon" src="\eccm\images\icon\corner.png">
+							</template>
+						</el-table-column>
+	
+						<!-- Data columns (Get from database) -->
+						<template v-for="item in viewColMasts">
+							<el-table-column v-if="item.col.keyNo != colKeyNo.PLAN_START_DATE && item.col.keyNo != colKeyNo.PLAN_END_DATE && item.col.keyNo != colKeyNo.ACTUAL_START_DATE && item.col.keyNo != colKeyNo.ACTUAL_END_DATE " 
+							:align="item.col.keyNo == colKeyNo.STATION_MASTER || item.col.keyNo == colKeyNo.CONST_NAME || item.col.keyNo == colKeyNo.JOB_NAME ? '' : 'center'" 
+							:width="item.col.width" :prop="'names[' + item.col.keyNo + ']'" :label="item.col.colName"> 
+								<template slot-scope="scope" fixed>
+									<span v-if="item.col.keyNo == colKeyNo.JOB_NO" @click="openDialog('view', scope.row)" class="like-link">{{ scope.row.names[item.col.keyNo] }}</span>
+									<span v-else>{{ scope.row.names[item.col.keyNo] }}</span>
+								</template>
+							</el-table-column>
+							<!-- Specific for merge columns -->
+							<template v-else-if="item.col.keyNo == colKeyNo.PLAN_START_DATE">
+								<el-table-column label="作業計画" :width="viewColMasts[viewColIndexs.PLAN_START_DATE].col.width + viewColMasts[viewColIndexs.PLAN_END_DATE].col.width"> 
+									<el-table-column align="center" :label="viewColMasts[viewColIndexs.PLAN_START_DATE].col.colName" 
+										:width="viewColMasts[viewColIndexs.PLAN_START_DATE].col.width" :prop="'names[' + colKeyNo.PLAN_START_DATE + ']'">
+									</el-table-column>
+									<el-table-column align="center" :label="viewColMasts[viewColIndexs.PLAN_END_DATE].col.colName" 
+										:width="viewColMasts[viewColIndexs.PLAN_END_DATE].col.width" :prop="'names[' + colKeyNo.PLAN_END_DATE + ']'">
+									</el-table-column>
+								</el-table-column>
+								<el-table-column label="作業実績" :width="viewColMasts[viewColIndexs.ACTUAL_START_DATE].col.width + viewColMasts[viewColIndexs.ACTUAL_END_DATE].col.width"> 
+									<el-table-column align="center" :label="viewColMasts[viewColIndexs.ACTUAL_START_DATE].col.colName" 
+										:width="viewColMasts[viewColIndexs.ACTUAL_START_DATE].col.width" :prop="'names[' + colKeyNo.ACTUAL_START_DATE + ']'"> 
+									</el-table-column>
+									<el-table-column align="center" :label="viewColMasts[viewColIndexs.ACTUAL_END_DATE].col.colName"
+										:width="viewColMasts[viewColIndexs.ACTUAL_END_DATE].col.width" :prop="'names[' + colKeyNo.ACTUAL_END_DATE + ']'"> 
+									</el-table-column>
+								</el-table-column>
+							</template>						
+						</template>
+						
+						<!-- Action column -->
+						<el-table-column width="165px" label="件名操作" align="center">
+							<template slot-scope="scope">
+								<el-button type='primary' size="mini" @click="openDialog('update', scope.row);">修正</el-button>
+								<el-button type='danger' size="mini" @click="openDialog('delete',scope.row)">削除</el-button>
+							</template>
+						</el-table-column>
+					</el-table> 
+				</div>
+				<el-button style="margin-top:20px;font-weight: bold"  type="success" @click="openDialog('insert')">工事件名作成</el-button>
+			</el-main> 
+		</el-container>
+
+		<!-- Create job dialog -->
+		<el-dialog :title="createDialog.title" :visible.sync="createDialog.visible" width="740px" custom-class="dialogCreate" top="10vh">
+			<el-form label-width="150px">
+				<template v-for="item in insertColMast" v-if="item.col.keyNo != colKeyNo.JOB_TYPE_INS && item.col.keyNo != colKeyNo.UPPER_JOB_ID">
+					<!-- Normal field -->
+					<select-column ref="fdItemSelect1" :mast="item" :keyno="item.col.keyNo" :display="createDialog.mode == 'view' || (createDialog.mode == 'update' && (item.col.keyNo == colKeyNo.STATION_MASTER || item.col.keyNo == colKeyNo.CONST_NAME))" 
+					:value="createDialog.data[item.col.keyNo]" :classname="item.col.requiredFlg == 1 ? 'el-input-required' :'el-input'" @action="onChangeValue">
+					</select-column>
+					
+					<!-- JOB NO relate -->
+					<template v-if="item.col.keyNo == colKeyNo.CONST_NO">
+						<!-- Job type -->
+						<el-form-item :label="insertColMast[insertColIndexs.JOB_TYPE_INS].col.colName" label-position="right">
+							<el-radio-group @change="onChangeJobType" style="width:400px;margin-top: 10px;" v-model="createDialog.data[colKeyNo.JOB_TYPE_INS]" :disabled="createDialog.mode == 'view'">
+								<el-radio style="float:left" :label="0">単独</el-radio>
+								<el-radio style="float:left" :label="1">親</el-radio>
+								<el-radio style="float:left" :label="2">子</el-radio>
+							</el-radio-group>
+							<span v-if="createDialog.mode != 'view'" style="display:inline-block;position: absolute;padding-left: 10px;">（必須）</span>
+						</el-form-item>
+
+						<!-- Upper job id -->
+						<el-form-item :label="insertColMast[insertColIndexs.UPPER_JOB_ID].col.colName" label-position="right">
+							<select ref="uperJobIdSelection" v-model="createDialog.data[colKeyNo.UPPER_JOB_ID]" @change="changeUperJobId" class="el-input-required" :disabled="createDialog.mode == 'view' || createDialog.data[colKeyNo.JOB_TYPE_INS] != 2">
+								<option v-for="d in insertColMast[insertColIndexs.UPPER_JOB_ID].datas" :value="d.key" >{{d.value}}</option>
+							</select>
+							<span v-if="createDialog.mode != 'view' && createDialog.data[colKeyNo.JOB_TYPE_INS] == 2" style="display:inline-block;position: absolute;padding-left: 10px;">（必須）</span>
+						</el-form-item>
+					</template>
+				</template>
+			</el-form>
+
+			<div slot="footer" class="dialog-body-footer">
+				<el-button class="dialog-button" :disabled="createDialog.disabledSave" @click="saveJob()">OK</el-button>
+				<el-button class="dialog-button" v-if="createDialog.mode != 'view'" @click="hideDialog()">ｷｬﾝｾﾙ</el-button>
+			</div>
+		</el-dialog>
+
+		<!-- Delete job dialog -->
+		<el-dialog title="工事件名削除ダイアログ" :show-close="false" :close-on-click-modal="false" :visible.sync="deleteDialog.visible" width="600px" top="40vh" class="ccms-customize-dialog">
+			<div class="dialog-header"><span style="font-size: 14px;">作業番号　{{deleteDialog.id}}　の工事件名を削除します。　よろしいですか？</span></div>
+			<div class="dialog-body-footer">
+				<el-button class="dialog-button" type="default" @click="deleteJob">OK</el-button>
+				<el-button class="dialog-button" @click="hideDialog">ｷｬﾝｾﾙ</el-button>
+			</div>
+		</el-dialog>
+
+		<div class="modal" v-show="isLoading" style="z-index: 9999 !important;">
+			<div class="loader"></div>
+		</div>
+	</div>
+
+	<script src="/eccm/script/components.js"></script>
+	<script src="/eccm/script/job.js"></script>
+</body>
+</html>
